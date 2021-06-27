@@ -1,0 +1,19 @@
+*{
+    padding: 0;
+    margin: 0;
+    font-family: 'Ubuntu', sans-serif;
+    overflow: hidden;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+.app{
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+}
+p{
+    margin-bottom: 0;
+}

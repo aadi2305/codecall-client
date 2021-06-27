@@ -1,0 +1,47 @@
+.landing-page{
+    display: flex;
+    align-items:stretch;
+    width: 100vw;
+    height:91.5vh;
+    background-color: #fffbeb;
+}
+.landing-page .row{
+    margin: 15px 60px;
+    width: 100vw;
+}
+#coding-img-div{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#coding-img{
+    width: 600px;
+    height:fit-content;
+}
+#lading-page-header-div{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+#lading-page-header{
+    width: 60%;
+    font-weight: 500;
+    font-size: 44px;
+    color: #4c4c4c;
+    margin-bottom: 30px;
+}
+.start-meet{
+    padding: 15px;
+    background-color: #4c4c4c;
+    color: #fffbeb;
+}
+.landing-page .start-meet:hover{
+    color: #fffbeb;
+}
+#enter-code{
+    margin-left: 10px;
+    padding: 15px;
+    background-color: white;
+    border: 1px #4c4c4c solid;
+    border-radius: 4px;
+}
