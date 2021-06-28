@@ -1,54 +1,143 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Editor } from "slate-react";
-import { initialValue } from "./slateInitialValue";
+import React, { useRef, useEffect } from "react";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:4000");
+const Room = (props) => {
+    const userVideo = useRef();
+    const partnerVideo = useRef();
+    const peerRef = useRef();
+    const socketRef = useRef();
+    const otherUser = useRef();
+    const userStream = useRef();
+    const senders = useRef([]);
 
-interface Props {}
+    useEffect(() => {
+        navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(stream => {
+            userVideo.current.srcObject = stream;
+            userStream.current = stream;
 
-export const SyncingEditor: React.FC<Props> = () => {
-  const [value, setValue] = useState(initialValue);
-  const id = useRef(`${Date.now()}`);
-  const editor = useRef<Editor | null>(null);
-  const remote = useRef(false);
+            socketRef.current = io.connect("/");
+            socketRef.current.emit("join room", props.match.params.roomID);
 
-  useEffect(() => {
-    socket.on(
-      "new-remote-operations",
-      ({ editorId, ops }: { editorId: string; ops: string }) => {
-        if (id.current !== editorId) {
-          remote.current = true;
-          JSON.parse(ops).forEach((op: any) =>
-            editor.current!.applyOperation(op)
-          );
-          remote.current = false;
+            socketRef.current.on('other user', userID => {
+                callUser(userID);
+                otherUser.current = userID;
+            });
+
+            socketRef.current.on("user joined", userID => {
+                otherUser.current = userID;
+            });
+
+            socketRef.current.on("offer", handleRecieveCall);
+
+            socketRef.current.on("answer", handleAnswer);
+
+            socketRef.current.on("ice-candidate", handleNewICECandidateMsg);
+        });
+
+    }, []);
+
+    function callUser(userID) {
+        peerRef.current = createPeer(userID);
+        userStream.current.getTracks().forEach(track => senders.current.push(peerRef.current.addTrack(track, userStream.current)));
+    }
+
+    function createPeer(userID) {
+        const peer = new RTCPeerConnection({
+            iceServers: [
+                {
+                    urls: "stun:stun.stunprotocol.org"
+                },
+                {
+                    urls: 'turn:numb.viagenie.ca',
+                    credential: 'muazkh',
+                    username: 'webrtc@live.com'
+                },
+            ]
+        });
+
+        peer.onicecandidate = handleICECandidateEvent;
+        peer.ontrack = handleTrackEvent;
+        peer.onnegotiationneeded = () => handleNegotiationNeededEvent(userID);
+
+        return peer;
+    }
+
+    function handleNegotiationNeededEvent(userID) {
+        peerRef.current.createOffer().then(offer => {
+            return peerRef.current.setLocalDescription(offer);
+        }).then(() => {
+            const payload = {
+                target: userID,
+                caller: socketRef.current.id,
+                sdp: peerRef.current.localDescription
+            };
+            socketRef.current.emit("offer", payload);
+        }).catch(e => console.log(e));
+    }
+
+    function handleRecieveCall(incoming) {
+        peerRef.current = createPeer();
+        const desc = new RTCSessionDescription(incoming.sdp);
+        peerRef.current.setRemoteDescription(desc).then(() => {
+            userStream.current.getTracks().forEach(track => peerRef.current.addTrack(track, userStream.current));
+        }).then(() => {
+            return peerRef.current.createAnswer();
+        }).then(answer => {
+            return peerRef.current.setLocalDescription(answer);
+        }).then(() => {
+            const payload = {
+                target: incoming.caller,
+                caller: socketRef.current.id,
+                sdp: peerRef.current.localDescription
+            }
+            socketRef.current.emit("answer", payload);
+        })
+    }
+
+    function handleAnswer(message) {
+        const desc = new RTCSessionDescription(message.sdp);
+        peerRef.current.setRemoteDescription(desc).catch(e => console.log(e));
+    }
+
+    function handleICECandidateEvent(e) {
+        if (e.candidate) {
+            const payload = {
+                target: otherUser.current,
+                candidate: e.candidate,
+            }
+            socketRef.current.emit("ice-candidate", payload);
         }
-      }
-    );
-  }, []);
+    }
 
-  return (
-    <Editor ref={editor}
-      value={value}
-    onChange={opts => 
-        {
-            setValue(opts.value);
-            const ops = opts.operations.filter(o => {
-                if (o){   
-                return 
-                    (
-                        o.type !== "set_selection" &&
-                        o.type !== "set_value" &&
-                        (!o.data || !o.data.has("source"))
-                    );
-                }
-            return false;
-          })
-          .toJS()
-          .map((o: any) => ({ ...o, data: { source: "one" } }));
-        if (ops.length && !remote.current) {socket.emit("new-operations", {editorId: id.current,ops: JSON.stringify(ops)});}
-      }}
-    />
-  );
+    function handleNewICECandidateMsg(incoming) {
+        const candidate = new RTCIceCandidate(incoming);
+
+        peerRef.current.addIceCandidate(candidate)
+            .catch(e => console.log(e));
+    }
+
+    function handleTrackEvent(e) {
+        partnerVideo.current.srcObject = e.streams[0];
+    };
+
+    function shareScreen() {
+        navigator.mediaDevices.getDisplayMedia({ cursor: true }).then(stream => {
+            const screenTrack = stream.getTracks()[0];
+            senders.current.find(sender => sender.track.kind === 'video').replaceTrack(screenTrack);
+            screenTrack.onended = function() {
+                senders.current.find(sender => sender.track.kind === "video").replaceTrack(userStream.current.getTracks()[1]);
+            }
+        })
+    }
+
+    return (
+        <div>
+           
+            <video controls style={{height: 500, width: 500}} autoPlay ref={userVideo} />
+            <video controls style={{height: 500, width: 500}} autoPlay ref={partnerVideo} />
+            <button onClick={shareScreen}>Share screen</button>
+        </div>
+    );
 };
+
+export default Room;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import "../styles/mainpage.css"
 import MicIcon from '@material-ui/icons/Mic';
 import MicOffIcon from '@material-ui/icons/MicOff';
@@ -20,6 +20,10 @@ const MainPage = (match) => {
     const [cam, setCam] = useState(true)
     const [userId, setUserId] = useState(null)
     let socket = React.useRef(null);
+    let streamRef = React.useRef(null);
+    let callRef = useRef(null)
+    let myPeerRef = useRef(null)
+    let senders = React.useRef([])
 
     const normalStyle = {
         color: "white",
@@ -36,14 +40,9 @@ const MainPage = (match) => {
         borderRadius : "100%"
     }
 
-    const micToggle = ()=>{
-        setMic(!mic);
-    }
+  
 
-    const camToggle = ()=>{
-        setCam(!cam);
-        const frndVideo = document.getElementById("my-video");
-    }
+    
 
     const dragElement = ()=>{   
         const elmnt  = document.getElementById("my-video-div")
@@ -85,27 +84,36 @@ const MainPage = (match) => {
           video.play()
         })
     }
-    
+    const micToggle = ()=>{
+        streamRef.current.getAudioTracks()[0].enabled = !mic
+        setMic(!mic);
+    }
+    const camToggle = ()=>{
+        streamRef.current.getVideoTracks()[0].enabled = !cam
+        setCam(!cam);
+    }
     useEffect(() => {
-        socket.current = io(ENDPOINT);
+        socket.current = io.connect("/");
         const myPeer = new Peer(undefined, {
             host: '/',
             port: '3002'
         })
-     
-
+        myPeerRef.current = myPeer;
         const myVideo = document.getElementById("my-video");
+
         myVideo.muted = true
+
         navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true
             }).then(stream => {
+            streamRef.current = stream;
             addVideoStream(myVideo, stream)
             if(myPeer){
             myPeer.on('call', call => {
-                console.log("second");
+                callRef.current = call
                 call.answer(stream)
-                const video = document.createElement('video')
+                const video = document.getElementById('other-person-video')
                 call.on('stream', userVideoStream => {
                   addVideoStream(video, userVideoStream)
                 })
@@ -115,11 +123,16 @@ const MainPage = (match) => {
                     connectToNewUser(userId, stream)
                 }, 1000)
             })
+            
+            
         })
 
         myPeer.on('open', id => {
-            console.log("first");
-            socket.current.emit('join-room', match.match.params.id, id)
+            const obj = {
+                roomId : match.match.params.id,
+                userId : id
+            }
+            socket.current.emit('join-room', obj)
             
         })
         function connectToNewUser(userId, stream) {
@@ -131,29 +144,29 @@ const MainPage = (match) => {
             call.on('close', () => {
               video.remove()
             })
-            // peers[userId] = call
+           
         }
-
-        // const frndVideo = document.getElementById("my-video");
-        // frndVideo.muted = true
-        // navigator.mediaDevices.getUserMedia({
-        //     video: true,
-        //     audio: true
-        //     }).then(stream => {
-        //     addVideoStream(frndVideo, stream)
-        // })
-    
-  
     return () => socket.current.disconnect()   
     }, [])
 
-    const emit = ()=>{
-        console.log("clicked");
-        socket.current.emit("plz", "aeeeeeeeeee");
+    const shareTheScreen = ()=>{
+        navigator.mediaDevices.getDisplayMedia({ cursor: true }).then(stream => {
+            const myVideo = document.getElementById("my-video2");
+            // callRef.current.answer(stream)
+            const screenTrack = stream.getTracks()[0];
+            addVideoStream(myVideo, stream)
+            // // senders.current.find(sender => sender.track.kind === 'video').replaceTrack(screenTrack);
+            // screenTrack.onended = function() {
+            //     // senders.current.find(sender => sender.track.kind === "video").replaceTrack(userStream.current.getTracks()[1]);
+            //     callRef.current.answer(streamRef.current)
+            // }
+        })
     }
 
     return ( 
-        <div onClick = {emit} className="main-page">
+        <div className="main-page">
+       
+      
             <video id = "other-person-video"></video>
             <div  id = "my-video-div">
                 <p id = "you">You</p>
@@ -165,7 +178,7 @@ const MainPage = (match) => {
                 <div className = "mui-icons" onClick = {micToggle} >{mic?<MicIcon  style = {normalStyle}/>:<MicOffIcon  style = {redStyle}/>}</div>
                 <div className = "mui-icons" onClick = {camToggle} >{cam?<VideocamIcon  style = {normalStyle}/>:<VideocamOffIcon  style = {redStyle}/>}</div>
                 <div className = "mui-icons"><CallEndIcon style = {redStyle}/></div>
-                {/* <div className = "mui-icons"><ScreenShareIcon style = {normalStyle} /></div> */}
+                <div className = "mui-icons" onClick = {shareTheScreen} ><ScreenShareIcon style = {normalStyle} /></div>
                 <div className = "mui-icons"><ChatIcon style = {normalStyle} /></div>
                 <div class="dropup">
                     <div className = "mui-icons" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
