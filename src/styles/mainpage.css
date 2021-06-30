@@ -17,6 +17,7 @@
 #my-video-div{
     cursor: move;
     position: absolute;
+    z-index: 1;
     top: 5vh;
     right: 2vw;
 }
@@ -49,4 +50,15 @@
 .mui-icons{
     margin-left: 30px;
     cursor: pointer;
+}
+#copyLink{
+    margin-left: 30px;
+    background: none ;
+    color: inherit;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    outline: inherit;
+    
 }
