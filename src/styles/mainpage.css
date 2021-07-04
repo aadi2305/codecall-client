@@ -1,13 +1,13 @@
+
 #other-person-video
 {
     height: 100%;
     transform: rotateY(180deg); 
     border-radius: 1%; 
 }
-
 .main-page{
     position: relative;
-    padding: 20px 0px   ;
+    padding: 20px 0px;
     height: 100vh;
     display: flex;
     justify-content: center;
@@ -61,4 +61,8 @@
     cursor: pointer;
     outline: inherit;
     
+}
+.chat-div{
+    z-index: 1;
+    position: absolute;
 }

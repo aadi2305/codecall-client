@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
+import {Link} from 'react-router-dom'
+import Chat from "./Chat"
 import "../styles/mainpage.css"
 import MicIcon from '@material-ui/icons/Mic';
 import MicOffIcon from '@material-ui/icons/MicOff';
@@ -14,20 +16,25 @@ import IconButton from '@material-ui/core/IconButton';
 import Peer from "peerjs"
 import io from "socket.io-client"
 import axios from "../axios"
+import Editor from "./Editor"
 
 const ENDPOINT = "http://localhost:8001/socket.io/";
 const MainPage = (match) => {
+    const [texts, setTexts] = useState([])
     const [mic, setMic] = useState(true)
     const [cam, setCam] = useState(true)
-    const [userId, setUserId] = useState(null)
-    const [peers, setPeers] = useState({})
+    const [myUserId, setMyUserId] = useState(null)
+    const [otherUserId, setOtherUserId] = useState(null)
+    const [myVideoState, setMyVideo] = useState(false)
     const [screenShare, setScreenShare] = useState(false)
+    const [chatToggle, setChatToggle] = useState(false)
+    const [interviewModeState, setInterviewModeState] = useState(false)
     let socket = React.useRef(null);
     let streamRef = React.useRef(null);
     let otherstreamRef = React.useRef(null);
     let callRef = useRef(null)
     let myPeerRef = useRef(null)
-    let senders = React.useRef([])
+
 
     const normalStyle = {
         color: "white",
@@ -91,13 +98,15 @@ const MainPage = (match) => {
         streamRef.current.getVideoTracks()[0].enabled = !cam
         setCam(!cam);
     }
+    
     useEffect(() => {
-        socket.current = io("/");
+        socket.current = io.connect("/");
         myPeerRef.current = new Peer(undefined, {
             host: '/',
             port: '3002'
         })
         myPeerRef.current.on('open', id => {
+            setMyUserId(id)
             const obj = {
                 roomId : match.match.params.id,
                 userId : id
@@ -107,8 +116,11 @@ const MainPage = (match) => {
         })
         socket.current.on('user-disconnected', userId => {
             console.log("User Disconnected");
-            // const call = myPeerRef.current.call(userId, otherstreamRef.current)
             if(callRef.current)callRef.current.close()
+        })
+        socket.current.on('recieved-msg', msgObj=>{
+            console.log(msgObj);
+            setTexts(prevData=>[...prevData, msgObj])
         })
         return () => socket.current.disconnect() 
     }, [])
@@ -123,6 +135,7 @@ const MainPage = (match) => {
                 audio: true
                 }).then(stream => {
                 streamRef.current = stream;
+                setMyVideo(true)
                 addVideoStream(myVideo, stream)
                 if(myPeerRef.current){
                 myPeerRef.current.on('call', call => {
@@ -133,6 +146,7 @@ const MainPage = (match) => {
                     })
                 })}
                 socket.current.on('user-connected', userId => {
+                    setOtherUserId(userId)
                     setTimeout(() => {
                         connectToNewUser(userId, stream)
                     }, 1000)
@@ -176,46 +190,39 @@ const MainPage = (match) => {
         })
        
     }
-    const shareTheScreen = ()=>{
-        // navigator.mediaDevices.getDisplayMedia({ cursor: true }).then(stream => {
-        //     const myVideo = document.getElementById("my-video2");
-        //     // callRef.current.answer(stream)
-        //     const screenTrack = stream.getTracks()[0];
-        //     addVideoStream(myVideo, stream)
-        //     // // senders.current.find(sender => sender.track.kind === 'video').replaceTrack(screenTrack);
-        //     // screenTrack.onended = function() {
-        //     //     // senders.current.find(sender => sender.track.kind === "video").replaceTrack(userStream.current.getTracks()[1]);
-        //     //     callRef.current.answer(streamRef.current)
-        //     // }
-        // })
-        setScreenShare(!screenShare)
-    }
+    useEffect(() => {
+        console.log(myUserId, otherUserId);
+    }, [myUserId, otherUserId])
 
-    const callEndHandler = ()=>{
-        // console.log("yo");
-        socket.current.disconnect()
+    const chatCloseHandler = ()=>{
+        if(chatToggle)setChatToggle(!chatToggle)
+    }
+    const interviewMode = ()=>{
+        setInterviewModeState(!interviewModeState)
     }
     return ( 
-        <div className="main-page">
-       
-      
-            <video id = "other-person-video"></video>
-            <div  id = "my-video-div">
-                <p id = "you">You</p>
+        <div  className="main-page">
+            {chatToggle &&
+            <div className="chat-div">
+                <Chat texts = {texts} setTexts = {setTexts} socket = {socket.current} myUserId = {myUserId} otherUserId = {otherUserId} setChatToggle = {setChatToggle}  />
+            </div>}
+            <div onClick = {chatCloseHandler}  id = "my-video-div">
+                {myVideoState?<p id = "you">You</p>:null}
                 <video onMouseDown = {dragElement} id = "my-video"></video>
             </div>
-            
-            <div className="option-bar ">
-               
+           
+           {interviewModeState ? null : <video onClick = {chatCloseHandler} id = "other-person-video"></video>}
+           {interviewModeState ? <Editor socket = {socket.current} /> : null}
+            <div onClick = {chatCloseHandler} className="option-bar">
                 <div className = "mui-icons" onClick = {micToggle} >{mic?<MicIcon  style = {normalStyle}/>:<MicOffIcon  style = {redStyle}/>}</div>
                 <div className = "mui-icons" onClick = {camToggle} >{cam?<VideocamIcon  style = {normalStyle}/>:<VideocamOffIcon  style = {redStyle}/>}</div>
-                <div className = "mui-icons" onClick = {callEndHandler}><CallEndIcon style = {redStyle}/></div>
+                <Link to = "/"><div className = "mui-icons"><CallEndIcon style = {redStyle}/></div></Link>
                 {/* <div className = "mui-icons" onClick = {shareTheScreen} ><ScreenShareIcon style = {normalStyle} /></div> */}
-                <div className = "mui-icons"><ChatIcon style = {normalStyle} /></div>
+                <div onClick = {()=>setChatToggle(!chatToggle)} className = "mui-icons"><ChatIcon style = {normalStyle} /></div>
                 <button onClick={() =>  navigator.clipboard.writeText(match.match.params.id)} id = "copyLink"title = "Copy Meet Link"><div><FileCopyOutlinedIcon title="Copy Meet Link" style = {normalStyle} /></div></button>
-
+                <button onClick = {interviewMode}>Interview mode</button>
             </div>
-        </div>
+    </div>
      );
 }
  

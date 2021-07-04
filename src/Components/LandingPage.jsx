@@ -30,7 +30,7 @@ const LandingPage = () => {
                     <div style = {{display:"flex"}}>
                         <button onClick = {routeChange} className="btn start-meet">Start A Meeting</button>
                         <form style = {style}>
-                            <input  onChange = {changeHandler} type="text" placeholder = "Enter The Code" id ="enter-code"/>
+                            <input autocomplete = "off"  onChange = {changeHandler} type="text" placeholder = "Enter The Code" id ="enter-code"/>
                             {value != "" ?<Link to = {"/"+value}><button style = {{marginLeft : "5px"}} className = "btn start-meet">Join</button></Link>:null}
                         </form>
                     </div>
