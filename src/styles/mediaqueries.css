@@ -1,0 +1,95 @@
+/* laptop */
+@media only screen and (max-width: 1098px) {
+    #lading-page-header{
+        font-size: 35px;
+    }
+    .landing-page .row{
+        margin: 15px 40px;
+    }
+    .start-meet{
+        font-size: 13px;
+        padding: 10px;
+    }
+    #enter-code{
+        font-size: 13px;
+        padding: 10px;
+    }
+    #coding-img{
+        width: 350px;
+    }
+}
+
+/* tablet */
+@media only screen and (max-width: 768px) {
+    .nav{
+        display: flex;
+        justify-content: center;
+    }
+    .landing-page .row{
+        margin: 15px 45px;
+    }
+    #lading-page-header{
+        width: 60%;
+        font-size: 35px;
+        text-align: center;
+    }
+    #lading-page-header-div{
+        align-items: center;
+        margin-bottom: 20px;
+    }
+  
+}
+
+/* large phone */
+@media only screen and (max-width: 430px) {
+    .landing-page .row{
+        margin: 15px 15px;
+    }
+    #nav-title{
+        font-size: 25px;
+    }
+    .landing-page .row{
+        margin: 10px 30px;
+    }
+    #lading-page-header{
+        width: 100%;
+        font-size: 26px;
+        text-align: center;
+    }
+    #lading-page-header-div{
+
+        margin-bottom: 0;
+    }
+    .start-meet{
+        font-size: 11.5px;
+        padding: 8px;
+    }
+    #enter-code{
+        font-size: 11.5px;
+        padding: 8px;
+    }
+    #coding-img{
+        width: 250px;
+    }
+}
+
+@media only screen and (max-width: 408px) {
+    .start-meet{
+        font-size: 11.5px;
+        padding: 7px;
+    }
+    #enter-code{
+        font-size: 11.5px;
+        padding: 7px;
+    }
+}
+@media only screen and (max-width: 408px) {
+    .start-meet{
+        font-size: 11px;
+        padding: 5px;
+    }
+    #enter-code{
+        font-size: 11px;
+        padding: 5px;
+    }
+}

@@ -25,17 +25,17 @@ const LandingPage = () => {
     return ( 
         <div className="landing-page">
             <div className="row">
-                <div className="col col-6" id = "lading-page-header-div">
+                <div className="col-md " id = "lading-page-header-div">
                     <p id = "lading-page-header">Coding Interviews Made Simple</p>
                     <div style = {{display:"flex"}}>
                         <button onClick = {routeChange} className="btn start-meet">Start A Meeting</button>
-                        <form style = {style}>
+                        <form className = "landing-page-input-buttons" style = {style}>
                             <input autocomplete = "off"  onChange = {changeHandler} type="text" placeholder = "Enter The Code" id ="enter-code"/>
                             {value != "" ?<Link to = {"/"+value}><button style = {{marginLeft : "5px"}} className = "btn start-meet">Join</button></Link>:null}
                         </form>
                     </div>
                 </div>
-                <div className="col col-6" id = "coding-img-div">
+                <div className="col-md  " id = "coding-img-div">
                     <img src="./interview.png" id = "coding-img" />
                 </div>
             </div>

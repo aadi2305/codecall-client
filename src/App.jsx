@@ -4,6 +4,7 @@ import LandingPage from "./Components/LandingPage"
 import Nav from "./Components/Nav"
 import MainPage from "./Components/MainPage"
 import Editor from './Components/Editor';
+import "./styles/mediaqueries.css"
 // import Trail from "./Components/"
 import "./styles/app.css"
 function App() {
