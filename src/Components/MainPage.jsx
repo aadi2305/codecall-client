@@ -136,7 +136,6 @@ const MainPage = (match) => {
     useEffect(() => {
         socket.current = io.connect("/");
         myPeerRef.current = new Peer(undefined, {
-            key : "peerjs",
             host: 'https://codecall-peerjs.herokuapp.com/',
             secure : true,
             port: 443
